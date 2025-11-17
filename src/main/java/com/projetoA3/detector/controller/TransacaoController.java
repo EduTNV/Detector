@@ -1,17 +1,19 @@
 package com.projetoA3.detector.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable; // <-- IMPORTAR
+import org.springframework.security.core.Authentication; // <-- IMPORTAR
+import org.springframework.security.core.context.SecurityContextHolder; // <-- IMPORTAR
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.projetoA3.detector.dto.TransacaoDTO;
-import com.projetoA3.detector.dto.TransacaoResponseDTO; // <-- IMPORTAR
-import com.projetoA3.detector.entity.Transacao;
+import com.projetoA3.detector.dto.TransacaoResponseDTO;
+import com.projetoA3.detector.dto.TransacaoViewDTO; // <-- IMPORTAR
+// import com.projetoA3.detector.entity.Transacao; // <-- NÃO USAR MAIS A ENTIDADE NO RETORNO
 import com.projetoA3.detector.service.TransacaoServico;
 
 @RestController
@@ -27,31 +29,29 @@ public class TransacaoController {
 
     @PostMapping
     public ResponseEntity<TransacaoResponseDTO> registrarTransacao(@RequestBody TransacaoDTO transacaoDto) {
-        // Agora o serviço retorna o DTO de Resposta
         TransacaoResponseDTO resposta = transacaoServico.registrarTransacao(transacaoDto);
-        
-        // Retornamos OK (200) em ambos os casos (COMPLETED ou PENDING)
-        // O frontend decidirá o que fazer com base no 'statusResposta'
         return ResponseEntity.ok(resposta);
     }
 
-    // --- NOVOS ENDPOINTS DE CONFIRMAÇÃO ---
-
-    /**
-     * Endpoint para o usuário aceitar uma transação pendente.
-     */
+    // --- (ENDPOINT ATUALIZADO) ---
     @PostMapping("/{id}/confirmar")
-    public ResponseEntity<Transacao> confirmarTransacao(@PathVariable Long id) {
-        Transacao transacao = transacaoServico.confirmarTransacao(id);
-        return ResponseEntity.ok(transacao);
+    public ResponseEntity<TransacaoViewDTO> confirmarTransacao(@PathVariable Long id) {
+        // Extrai o email do usuário logado (do token)
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String emailUsuario = authentication.getName();
+        
+        TransacaoViewDTO transacao = transacaoServico.confirmarTransacao(id, emailUsuario);
+        return ResponseEntity.ok(transacao); // Retorna o DTO seguro
     }
 
-    /**
-     * Endpoint para o usuário negar uma transação pendente.
-     */
+    // --- (ENDPOINT ATUALIZADO) ---
     @PostMapping("/{id}/negar")
-    public ResponseEntity<Transacao> negarTransacao(@PathVariable Long id) {
-        Transacao transacao = transacaoServico.negarTransacao(id);
-        return ResponseEntity.ok(transacao);
+    public ResponseEntity<TransacaoViewDTO> negarTransacao(@PathVariable Long id) {
+        // Extrai o email do usuário logado (do token)
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String emailUsuario = authentication.getName();
+
+        TransacaoViewDTO transacao = transacaoServico.negarTransacao(id, emailUsuario);
+        return ResponseEntity.ok(transacao); // Retorna o DTO seguro
     }
 }

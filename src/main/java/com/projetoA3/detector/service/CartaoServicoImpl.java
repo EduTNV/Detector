@@ -1,16 +1,19 @@
 package com.projetoA3.detector.service;
 
 import com.projetoA3.detector.dto.CartaoDTO;
+import com.projetoA3.detector.dto.TransacaoViewDTO; // <-- IMPORTAR
 import com.projetoA3.detector.entity.Cartao;
-import com.projetoA3.detector.entity.Usuarios;
 import com.projetoA3.detector.entity.Transacao;
+import com.projetoA3.detector.entity.Usuarios;
 import com.projetoA3.detector.repository.CartaoRepositorio;
+import com.projetoA3.detector.repository.TransacaoRepositorio; 
 import com.projetoA3.detector.repository.UsuarioRepositorio;
-import com.projetoA3.detector.repository.TransacaoRepositorio;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException; // <-- IMPORTAR
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional; // <-- IMPORTAR
 import java.util.stream.Collectors;
 
 @Service
@@ -18,77 +21,91 @@ public class CartaoServicoImpl implements CartaoServico {
 
     private final CartaoRepositorio cartaoRepositorio;
     private final UsuarioRepositorio usuarioRepositorio;
-    private final TransacaoRepositorio transacaoRepositorio;
+    private final TransacaoRepositorio transacaoRepositorio; 
 
     @Autowired
-    public CartaoServicoImpl(CartaoRepositorio cartaoRepositorio, UsuarioRepositorio usuarioRepositorio, TransacaoRepositorio transacaoRepositorio) {
+    public CartaoServicoImpl(CartaoRepositorio cartaoRepositorio, 
+                             UsuarioRepositorio usuarioRepositorio,
+                             TransacaoRepositorio transacaoRepositorio) {
         this.cartaoRepositorio = cartaoRepositorio;
         this.usuarioRepositorio = usuarioRepositorio;
-        this.transacaoRepositorio = transacaoRepositorio;
+        this.transacaoRepositorio = transacaoRepositorio; 
     }
 
     @Override
     public List<CartaoDTO> buscarCartoesPorUsuarioEmail(String email) {
-        // 1. Busca as entidades
         List<Cartao> cartoes = cartaoRepositorio.findByUsuarioEmail(email);
-        
-        // 2. Mapeia a lista de Entidades para a lista de DTOs
         return cartoes.stream()
-                .map(this::convertToDto) // Chama o método auxiliar abaixo
+                .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
 
+    // --- (MÉTODO ATUALIZADO - RETORNA DTO) ---
     @Override
-public Cartao adicionarCartao(CartaoDTO cartaoDTO, String emailUsuarioLogado) {
-
-    // --- INÍCIO DA NOVA LÓGICA DE VALIDAÇÃO ---
-        String numeroCartao = cartaoDTO.getNumero().replaceAll("\\s+", ""); // Remove espaços
-
-        // 1. Validação do Algoritmo de Luhn
+    public CartaoDTO adicionarCartao(CartaoDTO cartaoDTO, String emailUsuarioLogado) {
+        String numeroCartao = cartaoDTO.getNumero().replaceAll("\\s+", ""); 
         if (!isLuhnValid(numeroCartao)) {
             throw new IllegalArgumentException("Número de cartão inválido.");
         }
-
-        // 2. Identificação da Bandeira
         String bandeira = identificarBandeira(numeroCartao);
         if ("DESCONHECIDA".equals(bandeira)) {
             throw new IllegalArgumentException("Bandeira do cartão não suportada ou desconhecida.");
         }
-        // --- FIM DA NOVA LÓGICA ---
 
-    Usuarios usuario = usuarioRepositorio.findByEmailAndAtivoTrue(emailUsuarioLogado) // Use o método corrigido
-            .orElseThrow(() -> new RuntimeException("Usuário logado não encontrado: " + emailUsuarioLogado));
-
+        Usuarios usuario = usuarioRepositorio.findByEmailAndAtivoTrue(emailUsuarioLogado)
+                .orElseThrow(() -> new RuntimeException("Usuário logado não encontrado: " + emailUsuarioLogado));
         
         Cartao novoCartao = new Cartao();
-        novoCartao.setNumero(numeroCartao); // Salva o número limpo
+        novoCartao.setNumero(numeroCartao); 
         novoCartao.setValidade(cartaoDTO.getValidade());
         novoCartao.setNomeTitular(cartaoDTO.getNomeTitular());
         novoCartao.setUsuario(usuario);
-        novoCartao.setBandeira(bandeira); // <-- SALVA A BANDEIRA
-        return cartaoRepositorio.save(novoCartao);
+        novoCartao.setBandeira(bandeira); 
+        
+        Cartao cartaoSalvo = cartaoRepositorio.save(novoCartao);
+        
+        // **CORREÇÃO DE VAZAMENTO DE DADOS**
+        return convertToDto(cartaoSalvo); // Retorna o DTO seguro
     }
 
+    // --- (MÉTODO ATUALIZADO - SEGURANÇA IDOR E RETORNO DTO) ---
     @Override
-    public List<Transacao> getTransacoesPorCartaoId(Long cartaoId) {
-        // Este método já existe no seu TransacaoRepositorio
-        return transacaoRepositorio.findByCartaoIdOrderByDataHoraDesc(cartaoId);
+    public List<TransacaoViewDTO> getTransacoesPorCartaoId(Long cartaoId, String emailUsuarioLogado) {
+        
+        // **CORREÇÃO DE SEGURANÇA (IDOR)**
+        Optional<Cartao> cartaoOpt = cartaoRepositorio.findById(cartaoId);
+        if (cartaoOpt.isEmpty()) {
+            throw new RuntimeException("Cartão não encontrado.");
+        }
+        
+        Cartao cartao = cartaoOpt.get();
+        if (!cartao.getUsuario().getEmail().equals(emailUsuarioLogado)) {
+            throw new AccessDeniedException("Acesso negado: Este cartão não pertence a você.");
+        }
+
+        // Se o usuário é o dono, busca as transações
+        List<Transacao> transacoes = transacaoRepositorio.findByCartaoIdOrderByDataHoraDesc(cartaoId);
+
+        // **CORREÇÃO DE VAZAMENTO DE DADOS**
+        // Converte a lista de Entidades para uma lista de DTOs seguros
+        return transacoes.stream()
+                .map(TransacaoViewDTO::new) // Usa o construtor (Transacao t)
+                .collect(Collectors.toList());
     }
 
+    // --- (MÉTODO HELPER) ---
     private CartaoDTO convertToDto(Cartao cartao) {
         CartaoDTO dto = new CartaoDTO();
-        
         dto.setId(cartao.getId()); 
-        dto.setNumero(cartao.getNumero());
-        dto.setValidade(cartao.getValidade());
+        // Oculta o número completo do cartão por segurança (Boas práticas)
+        dto.setNumero("**** **** **** " + cartao.getNumero().substring(cartao.getNumero().length() - 4));
+        dto.setValidade(cartao.getValidade()); 
         dto.setNomeTitular(cartao.getNomeTitular());
-        dto.setBandeira(cartao.getBandeira()); // <-- ADICIONA A BANDEIRA NO RETORNO
-        // A linha do 'limite' foi removida pois o campo não existe
-
+        dto.setBandeira(cartao.getBandeira());
         return dto;
     }
 
-    //Validação usando o Algoritmo de Luhn (mod 10).
+    // --- (Métodos privados de validação de cartão) ---
     private boolean isLuhnValid(String numero) {
         int nSoma = 0;
         boolean isSegundo = false;
@@ -104,31 +121,13 @@ public Cartao adicionarCartao(CartaoDTO cartaoDTO, String emailUsuarioLogado) {
         return (nSoma % 10 == 0);
     }
 
-    
-    // Identificaçaõ de bandeira com base nos primeiros dígitos (IIN).
-     
     private String identificarBandeira(String numero) {
-        if (numero.startsWith("4")) {
-            return "VISA";
-        }
-        if (numero.matches("^5[1-5].*")) { // 51 a 55
-            return "MASTERCARD";
-        }
-        if (numero.startsWith("34") || numero.startsWith("37")) {
-            return "AMEX";
-        }
-        if (numero.startsWith("6011") || numero.startsWith("65")) {
-             return "DISCOVER";
-        }
-        if (numero.startsWith("3")) {
-            return "JCB";
-        }
-         if (numero.startsWith("35")) {
-            return "ELO";
-        }
-        
+        if (numero.startsWith("4")) { return "VISA"; }
+        if (numero.matches("^5[1-5].*")) { return "MASTERCARD"; }
+        if (numero.startsWith("34") || numero.startsWith("37")) { return "AMEX"; }
+        if (numero.startsWith("6011") || numero.startsWith("65")) { return "DISCOVER"; }
+        if (numero.startsWith("3")) { return "JCB"; }
+        if (numero.startsWith("35")) { return "ELO"; }
         return "DESCONHECIDA";
     }
-
-} 
-
+}

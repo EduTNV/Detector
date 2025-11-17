@@ -1,39 +1,40 @@
 package com.projetoA3.detector.service;
 
 import com.projetoA3.detector.dto.TransacaoDTO;
-import com.projetoA3.detector.dto.TransacaoResponseDTO; // <-- IMPORTAR
+import com.projetoA3.detector.dto.TransacaoResponseDTO;
+import com.projetoA3.detector.dto.TransacaoViewDTO; // <-- IMPORTAR
 import com.projetoA3.detector.entity.Cartao;
 import com.projetoA3.detector.entity.Transacao;
-import com.projetoA3.detector.entity.TransacaoStatus; // <-- IMPORTAR
+import com.projetoA3.detector.entity.TransacaoStatus;
 import com.projetoA3.detector.entity.Usuarios;
 import com.projetoA3.detector.repository.CartaoRepositorio;
 import com.projetoA3.detector.repository.TransacaoRepositorio;
-// import com.projetoA3.detector.exception.FraudDetectedException; // <-- NÃO VAMOS MAIS USAR
+import com.projetoA3.detector.exception.FraudDetectedException; // <-- IMPORTAR (SE NÃO ESTIVER)
 
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.PrecisionModel;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException; // <-- IMPORTAR
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalTime;
 import java.time.LocalDateTime;
-// import java.util.List; // Não é mais necessário para a lógica antiga
-import java.util.Optional; // <-- IMPORTAR
+import java.util.Optional;
 
 @Service
 public class TransacaoServicoImpl implements TransacaoServico {
 
+    // ... (injeções e constantes existentes) ...
     private final TransacaoRepositorio transacaoRepositorio;
     private final CartaoRepositorio cartaoRepositorio;
     private final UsuarioServico usuarioServico; 
     
     private final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
     
-    // --- LIMITES DAS REGRAS DE FRAUDE ---
     private static final double FATOR_DESVIO_GASTO = 3.0; 
     private static final double DISTANCIA_MAXIMA_KM_PERMITIDA = 25.0; 
 
@@ -55,7 +56,7 @@ public class TransacaoServicoImpl implements TransacaoServico {
         Usuarios usuario = cartao.getUsuario();
 
         // --- LÓGICA DE DETECÇÃO (NÃO MAIS LANÇA EXCEÇÃO) ---
-        String mensagemFraude = null; // Armazena a mensagem de fraude, se houver
+        String mensagemFraude = null; 
 
         // REGRA TIPO 1: Gasto Atípico
         if (usuario.getMediaGasto() != null && usuario.getMediaGasto().compareTo(BigDecimal.ZERO) > 0) {
@@ -68,9 +69,9 @@ public class TransacaoServicoImpl implements TransacaoServico {
             }
         }
 
-        // REGRA TIPO 2: Horário Atípico (só checa se a regra 1 não pegou)
+        // REGRA TIPO 2: Horário Atípico
         if (mensagemFraude == null && usuario.getHorarioHabitualInicio() != null && usuario.getHorarioHabitualFim() != null) {
-            LocalTime horaTransacao = LocalTime.now();
+            LocalTime horaTransacao = LocalTime.now(); // Usa o fuso do servidor (corrigido no DetentorApplication)
             if (horaTransacao.isBefore(usuario.getHorarioHabitualInicio()) || 
                 horaTransacao.isAfter(usuario.getHorarioHabitualFim())) {
                 
@@ -79,8 +80,7 @@ public class TransacaoServicoImpl implements TransacaoServico {
             }
         }
 
-        // REGRA TIPO 3: Localização (checa se regras 1 e 2 não pegaram)
-        // Esta é a regra de maior importância, vamos checá-la por último
+        // REGRA TIPO 3: Localização
         if (mensagemFraude == null) {
             Double distanciaKm = transacaoRepositorio.calcularDistanciaEntrePontosKm(
                 transacaoDto.getLongitude(), transacaoDto.getLatitude(),
@@ -92,9 +92,6 @@ public class TransacaoServicoImpl implements TransacaoServico {
             }
         }
         
-        // --- FIM DAS DETECÇÕES ---
-
-        // 2. Criar e salvar a transação
         Point localizacaoPonto = geometryFactory.createPoint(
             new Coordinate(transacaoDto.getLongitude(), transacaoDto.getLatitude())
         );
@@ -103,68 +100,69 @@ public class TransacaoServicoImpl implements TransacaoServico {
         novaTransacao.setValor(transacaoDto.getValor());
         novaTransacao.setEstabelecimento(transacaoDto.getEstabelecimento());
         novaTransacao.setCartao(cartao);
-        novaTransacao.setDataHora(LocalDateTime.now());
+        novaTransacao.setDataHora(LocalDateTime.now()); // Usa o fuso do servidor
         novaTransacao.setLocalizacao(localizacaoPonto);
         novaTransacao.setIpAddress(transacaoDto.getIpAddress());
         
-        // --- DECISÃO DE STATUS ---
         if (mensagemFraude != null) {
-            // FRAUDE DETECTADA! Salva como PENDENTE.
             novaTransacao.setStatus(TransacaoStatus.PENDING);
             Transacao transacaoSalva = transacaoRepositorio.save(novaTransacao);
-            
-            // Retorna a resposta especial para o frontend
             return new TransacaoResponseDTO("PENDING_CONFIRMATION", mensagemFraude, transacaoSalva);
         } else {
-            // NENHUMA FRAUDE. Salva como COMPLETA.
             novaTransacao.setStatus(TransacaoStatus.COMPLETED);
             Transacao transacaoSalva = transacaoRepositorio.save(novaTransacao);
-            
-            // ATUALIZA OS PADRÕES (pois a transação é válida)
             usuarioServico.atualizarPadroesUsuario(usuario, transacaoSalva);
-            
-            // Retorna a resposta padrão
             return new TransacaoResponseDTO("COMPLETED", "Transação registrada com sucesso.", transacaoSalva);
         }
     }
 
-    // --- IMPLEMENTAÇÃO DOS NOVOS MÉTODOS ---
-
+    // --- (MÉTODO ATUALIZADO COM SEGURANÇA IDOR E RETORNO DTO) ---
     @Override
     @Transactional
-    public Transacao confirmarTransacao(Long transacaoId) {
+    public TransacaoViewDTO confirmarTransacao(Long transacaoId, String emailUsuarioLogado) {
         Transacao transacao = transacaoRepositorio.findById(transacaoId)
                 .orElseThrow(() -> new RuntimeException("Transação não encontrada."));
+
+        // **CORREÇÃO DE SEGURANÇA (IDOR)**
+        // Verifica se o usuário logado é o dono da transação
+        if (!transacao.getCartao().getUsuario().getEmail().equals(emailUsuarioLogado)) {
+            throw new AccessDeniedException("Acesso negado: Você não é o proprietário desta transação.");
+        }
 
         if (transacao.getStatus() != TransacaoStatus.PENDING) {
             throw new IllegalStateException("Esta transação não está pendente de confirmação.");
         }
 
-        // Atualiza o status
         transacao.setStatus(TransacaoStatus.COMPLETED);
-        
-        // **IMPORTANTE**: Agora que foi confirmada, ATUALIZAMOS O PADRÃO do usuário
         Usuarios usuario = transacao.getCartao().getUsuario();
         usuarioServico.atualizarPadroesUsuario(usuario, transacao);
         
-        return transacaoRepositorio.save(transacao);
+        Transacao transacaoSalva = transacaoRepositorio.save(transacao);
+        
+        // **CORREÇÃO DE VAZAMENTO DE DADOS**
+        return new TransacaoViewDTO(transacaoSalva); // Retorna o DTO seguro
     }
 
+    // --- (MÉTODO ATUALIZADO COM SEGURANÇA IDOR E RETORNO DTO) ---
     @Override
     @Transactional
-    public Transacao negarTransacao(Long transacaoId) {
+    public TransacaoViewDTO negarTransacao(Long transacaoId, String emailUsuarioLogado) {
         Transacao transacao = transacaoRepositorio.findById(transacaoId)
                 .orElseThrow(() -> new RuntimeException("Transação não encontrada."));
+
+        // **CORREÇÃO DE SEGURANÇA (IDOR)**
+        if (!transacao.getCartao().getUsuario().getEmail().equals(emailUsuarioLogado)) {
+            throw new AccessDeniedException("Acesso negado: Você não é o proprietário desta transação.");
+        }
 
         if (transacao.getStatus() != TransacaoStatus.PENDING) {
             throw new IllegalStateException("Esta transação não está pendente de confirmação.");
         }
 
-        // Apenas atualiza o status
         transacao.setStatus(TransacaoStatus.DENIED);
-        
-        // Não atualizamos o padrão do usuário, pois foi negada
-        
-        return transacaoRepositorio.save(transacao);
+        Transacao transacaoSalva = transacaoRepositorio.save(transacao);
+
+        // **CORREÇÃO DE VAZAMENTO DE DADOS**
+        return new TransacaoViewDTO(transacaoSalva); // Retorna o DTO seguro
     }
 }
