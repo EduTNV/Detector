@@ -1,87 +1,112 @@
-### PASSO 1: Criar um novo usuário
-# Corrigido para a porta 8080
-POST https://b51950b57160.ngrok-free.app/api/usuarios
+### Variáveis de Ambiente (ajuste a baseUrl se necessário)
+@baseUrl = https://detector-50pn.onrender.com
+@token = 
+@cartaoId =
+@transacaoId =
+
+### ===================================================
+### PASSO 1: REGISTRAR (Cadastro)
+### ===================================================
+POST {{baseUrl}}/api/usuarios
 Content-Type: application/json
 
 {
-    "nome": "Usuário Teste2 Válido",
-    "email": "teste@valido2.com",
-    "senha": "senha1233"
+    "nome": "Usuario Teste HTTP Completo",
+    "email": "teste.http.completo@valido.com",
+    "senha": "senha123"
 }
 
-### --------------------------------------------------
-
-### PASSO 2: Fazer Login (com o usuário ACIMA)
-# @name loginRequest
-POST https://17b294cbfa6b.ngrok-free.app/api/auth/login
+### ===================================================
+### PASSO 2: LOGIN (Obter Token)
+### ===================================================
+# @name login
+POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
 {
-    "email": "teste@valido2.com",
-    "senha": "senha1233"
+    "email": "teste.http.completo@valido.com",
+    "senha": "senha123"
 }
 
-### --------------------------------------------------
+> {%
+    client.global.set("token", response.body.token);
+    client.log("Token salvo: " + response.body.token);
+%}
 
-### PASSO 3: Listar todos os usuários (AUTENTICADO)
-# Pega o token da resposta do 'loginRequest' acima
-@jwt = {{loginRequest.response.body.token}}
-
-GET https://cd5065193291.ngrok-free.app/api/cartoes/meus
-Authorization: Bearer {{jwt}}
-
-
-
-### 4. Atualizar um usuário existente (PUT)
-# Reutiliza o token da requisição 'loginRequest'
-PUT http://localhost:8080/api/usuarios/5
+### ===================================================
+### PASSO 3: CRIAÇÃO DE CARTÃO
+### ===================================================
+# @name addCard
+POST {{baseUrl}}/api/cartoes
+Authorization: Bearer {{token}}
 Content-Type: application/json
-Authorization: Bearer {{jwt}}
 
 {
-    "nome": "Teste Put com token"
+    "numero": "4111222233334444",
+    "validade": "12/30",
+    "nomeTitular": "Usuario Teste HTTP Completo"
 }
 
-### --------------------------------------------------
+> {%
+    client.global.set("cartaoId", response.body.id);
+    client.log("Cartao ID salvo: " + response.body.id);
+%}
 
-### 5. Deletar (omitir) um usuário (DELETE)
-# Reutiliza o token da requisição 'loginRequest'
-DELETE http://localhost:8080/api/usuarios/5
-Authorization: Bearer {{jwt}}
+### ===================================================
+### PASSO 4: TESTES DE TRANSAÇÃO
+### ===================================================
 
-### --------------------------------------------------
-
-### PASSO 6: Criar um Cartão (precisa de ID de usuário)
-# (Vamos assumir que o usuário "teste@valido.com" é o ID 1)
-# Você precisa estar logado (ter rodado o PASSO 2)
-
-@jwt = {{loginRequest.response.body.token}}
-
-POST https://b51950b57160.ngrok-free.app/api/cartoes
+### 4.A - Teste de Transação VÁLIDA (Status: COMPLETED)
+# (Coordenadas próximas = sem fraude)
+POST {{baseUrl}}/api/transacoes
+Authorization: Bearer {{token}}
 Content-Type: application/json
-Authorization: Bearer {{jwt}}
 
 {
-    "numero": "1111222244445555",
-    "validade": "12/31",
-    "nomeTitular": "Usuário Teste2 Válido",
-    "usuarioId": 6
+    "valor": 100.50,
+    "estabelecimento": "Loja Válida (SP)",
+    "cartaoId": {{cartaoId}},
+    "latitude": -23.5501,
+    "longitude": -46.6499,
+    "latitudeUsuario": -23.5510,
+    "longitudeUsuario": -46.6500
 }
 
-### --------------------------------------------------
-### --------------------------------------------------
-### PASSO 7: REGISTRAR TRANSAÇÃO COM LOCALIZAÇÃO
-# (Você precisa ter rodado o PASSO 6 para ter um cartão)
+### ---------------------------------------------------
 
-POST https://fd50aa4c717e.ngrok-free.app/api/transacoes
+### 4.B - Teste de Transação FRAUDULENTA (Status: PENDING)
+# (Coordenadas distantes = fraude de localização)
+# @name transacaoPendente
+POST {{baseUrl}}/api/transacoes
+Authorization: Bearer {{token}}
 Content-Type: application/json
-Authorization: Bearer {{jwt}}
 
 {
-    "valor": 100.00,
-    "estabelecimento": "Shopping Morumbi",
-    "cartaoId": 4, 
-    "latitude": -23.6214,
-    "longitude": -46.696,
-    "ipAddress": "177.0.0.1"
+    "valor": 75.00,
+    "estabelecimento": "Loja Fraude (SP vs Salvador)",
+    "cartaoId": {{cartaoId}},
+    "latitude": -23.5501,
+    "longitude": -46.6499,
+    "latitudeUsuario": -12.9714,
+    "longitudeUsuario": -38.5014
 }
+
+> {%
+    client.global.set("transacaoId", response.body.transacao.id);
+    client.log("Transacao PENDENTE ID salva: " + response.body.transacao.id);
+%}
+
+### ---------------------------------------------------
+
+### 4.C - Teste CONFIRMAR Transação Pendente
+# (Execute SOMENTE APÓS o 4.B)
+POST {{baseUrl}}/api/transacoes/{{transacaoId}}/confirmar
+Authorization: Bearer {{token}}
+
+### ---------------------------------------------------
+
+### 4.D - Teste NEGAR Transação Pendente
+# (ATENÇÃO: Para testar, rode o 4.B novamente para gerar uma nova
+# transação pendente, e SÓ ENTÃO rode este 4.D)
+POST {{baseUrl}}/api/transacoes/{{transacaoId}}/negar
+Authorization: Bearer {{token}}
