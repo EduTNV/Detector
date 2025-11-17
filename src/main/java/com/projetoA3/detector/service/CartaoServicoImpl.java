@@ -3,8 +3,10 @@ package com.projetoA3.detector.service;
 import com.projetoA3.detector.dto.CartaoDTO;
 import com.projetoA3.detector.entity.Cartao;
 import com.projetoA3.detector.entity.Usuarios;
+import com.projetoA3.detector.entity.Transacao;
 import com.projetoA3.detector.repository.CartaoRepositorio;
 import com.projetoA3.detector.repository.UsuarioRepositorio;
+import com.projetoA3.detector.repository.TransacaoRepositorio;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,11 +18,13 @@ public class CartaoServicoImpl implements CartaoServico {
 
     private final CartaoRepositorio cartaoRepositorio;
     private final UsuarioRepositorio usuarioRepositorio;
+    private final TransacaoRepositorio transacaoRepositorio;
 
     @Autowired
-    public CartaoServicoImpl(CartaoRepositorio cartaoRepositorio, UsuarioRepositorio usuarioRepositorio) {
+    public CartaoServicoImpl(CartaoRepositorio cartaoRepositorio, UsuarioRepositorio usuarioRepositorio, TransacaoRepositorio transacaoRepositorio) {
         this.cartaoRepositorio = cartaoRepositorio;
         this.usuarioRepositorio = usuarioRepositorio;
+        this.transacaoRepositorio = transacaoRepositorio;
     }
 
     @Override
@@ -65,6 +69,11 @@ public Cartao adicionarCartao(CartaoDTO cartaoDTO, String emailUsuarioLogado) {
         return cartaoRepositorio.save(novoCartao);
     }
 
+    @Override
+    public List<Transacao> getTransacoesPorCartaoId(Long cartaoId) {
+        // Este método já existe no seu TransacaoRepositorio
+        return transacaoRepositorio.findByCartaoIdOrderByDataHoraDesc(cartaoId);
+    }
 
     private CartaoDTO convertToDto(Cartao cartao) {
         CartaoDTO dto = new CartaoDTO();

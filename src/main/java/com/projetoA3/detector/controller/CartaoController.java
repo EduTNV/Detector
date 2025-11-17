@@ -10,9 +10,11 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.security.core.Authentication; // Importe este
 import org.springframework.security.core.context.SecurityContextHolder; // Importe este
 import org.springframework.web.bind.annotation.GetMapping; // Importe este
+import org.springframework.web.bind.annotation.PathVariable;
 
 import com.projetoA3.detector.dto.CartaoDTO;
 import com.projetoA3.detector.entity.Cartao;
+import com.projetoA3.detector.entity.Transacao;
 import com.projetoA3.detector.service.CartaoServico;
 import java.util.List; // <--- ADICIONE ESTA LINHA
 
@@ -51,6 +53,13 @@ public class CartaoController {
 
         // 4. Retorna a lista de cartões (DTOs)
         return ResponseEntity.ok(cartoes);
+    }
+    
+    @GetMapping("/{cartaoId}/transacoes")
+    public ResponseEntity<List<Transacao>> getTransacoesDoCartao(@PathVariable Long cartaoId) {
+        // (Opcional: Adicionar verificação se o cartaoId pertence ao usuário logado)
+        List<Transacao> transacoes = cartaoServico.getTransacoesPorCartaoId(cartaoId);
+        return ResponseEntity.ok(transacoes);
     }
 
 }

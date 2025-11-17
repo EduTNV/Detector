@@ -2,15 +2,11 @@ package com.projetoA3.detector.service;
 
 import com.projetoA3.detector.dto.CartaoDTO;
 import com.projetoA3.detector.entity.Cartao;
+import com.projetoA3.detector.entity.Transacao; 
 import java.util.List;
 
 public interface CartaoServico {
-
-    /**
-     * Adiciona um novo cartão a um usuário existente.
-     * @param cartaoDto Os dados do cartão a ser adicionado.
-     * @return O objeto Cartao que foi salvo no banco.
-     */
     Cartao adicionarCartao(CartaoDTO cartaoDto, String emailUsuarioLogado);
     List<CartaoDTO> buscarCartoesPorUsuarioEmail(String email);
+    List<Transacao> getTransacoesPorCartaoId(Long cartaoId);
 }
