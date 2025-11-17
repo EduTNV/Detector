@@ -59,31 +59,31 @@ public class SecurityConfig {
         return source;
     }
 
-    @Bean
+   @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // 1. APLICA A CONFIGURAÇÃO DE CORS
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-
-                // 2. Desabilita o CSRF
                 .csrf(csrf -> csrf.disable())
 
                 // 3. Define as regras de autorização
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        
+                        // 1. PRIMEIRA REGRA: LIBERA TODOS OS OPTIONS ANTES DE TUDO
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // <-- ESSENCIAL PARA CORS
+                        
+                        // 2. REGRAS PÚBLICAS
                         .requestMatchers("/api/auth/login").permitAll()
                         .requestMatchers("/api/auth/version").permitAll()
-                        .requestMatchers("/healthz").permitAll()
+                        .requestMatchers("/healthz").permitAll() 
                         .requestMatchers(HttpMethod.POST, "/api/usuarios").permitAll() // Rota de cadastro
-                        .anyRequest().authenticated())
+                        
+                        // 3. REGRA RESTRITIVA (A ÚLTIMA A SER APLICADA)
+                        .anyRequest().authenticated()
+                        )
 
-                // 4. Configura o tratamento de exceção
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
-
-                // 5. Define a política de sessão como STATELESS
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
-        // 6. Adiciona o filtro JWT
         http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

@@ -42,7 +42,7 @@ Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-    "numero": "4111222233334444",
+    "numero": "4242424242424242",
     "validade": "12/30",
     "nomeTitular": "Usuario Teste HTTP Completo"
 }
