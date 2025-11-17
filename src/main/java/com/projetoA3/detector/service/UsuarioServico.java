@@ -1,6 +1,7 @@
 package com.projetoA3.detector.service;
 
 import com.projetoA3.detector.dto.UsuarioDTO;
+import com.projetoA3.detector.dto.HorarioHabitualDTO;
 import com.projetoA3.detector.entity.HistoricoUsuario;
 import com.projetoA3.detector.entity.UsuarioOmitido;
 import com.projetoA3.detector.entity.Usuarios;
@@ -29,4 +30,6 @@ public interface UsuarioServico {
     List<UsuarioOmitido> listarOmitidos();
 
     void atualizarPadroesUsuario(Usuarios usuario, Transacao novaTransacao);
+
+    Usuarios definirHorarioHabitual(String emailUsuarioLogado, HorarioHabitualDTO horarioDTO);
 }

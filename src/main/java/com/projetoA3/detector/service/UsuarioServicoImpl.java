@@ -1,9 +1,11 @@
 package com.projetoA3.detector.service;
 
+import com.projetoA3.detector.dto.HorarioHabitualDTO; // <-- IMPORTADO
 import com.projetoA3.detector.dto.UsuarioDTO;
 import com.projetoA3.detector.entity.HistoricoUsuario;
 import com.projetoA3.detector.entity.UsuarioOmitido;
 import com.projetoA3.detector.entity.Usuarios;
+import com.projetoA3.detector.entity.Transacao; // <-- IMPORTADO
 import com.projetoA3.detector.repository.HistoricoUsuarioRepositorio;
 import com.projetoA3.detector.repository.UsuarioOmitidoRepositorio;
 import com.projetoA3.detector.repository.UsuarioRepositorio;
@@ -12,10 +14,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.projetoA3.detector.entity.Transacao;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.time.LocalTime;
+import java.math.BigDecimal; // <-- IMPORTADO
+import java.math.RoundingMode; // <-- IMPORTADO
+import java.time.LocalTime; // <-- IMPORTADO
 import java.util.List;
 import java.util.Optional;
 
@@ -29,9 +30,9 @@ public class UsuarioServicoImpl implements UsuarioServico {
 
     @Autowired
     public UsuarioServicoImpl(UsuarioRepositorio usuarioRepositorio,
-            HistoricoUsuarioRepositorio historicoUsuarioRepositorio,
-            UsuarioOmitidoRepositorio usuarioOmitidoRepositorio,
-            PasswordEncoder passwordEncoder) {
+                              HistoricoUsuarioRepositorio historicoUsuarioRepositorio,
+                              UsuarioOmitidoRepositorio usuarioOmitidoRepositorio,
+                              PasswordEncoder passwordEncoder) {
         this.usuarioRepositorio = usuarioRepositorio;
         this.historicoUsuarioRepositorio = historicoUsuarioRepositorio;
         this.usuarioOmitidoRepositorio = usuarioOmitidoRepositorio;
@@ -102,18 +103,18 @@ public class UsuarioServicoImpl implements UsuarioServico {
         return usuarioOmitidoRepositorio.findAll();
     }
 
-    // --- IMPLEMENTAÇÃO DO NOVO MÉTODO ---
+    // --- (MÉTODO ATUALIZADO) ---
     @Override
     @Transactional
     public void atualizarPadroesUsuario(Usuarios usuario, Transacao novaTransacao) {
-
-        // 1. Recalcular Média de Gasto
+        
+        // 1. Recalcular Média de Gasto (Mantido)
         recalcularMediaGasto(usuario, novaTransacao.getValor());
 
-        // 2. Ajustar Horário
-        ajustarHorarioHabitual(usuario, novaTransacao.getDataHora().toLocalTime());
+        // 2. Ajustar Horário (REMOVIDO, conforme sua solicitação)
+        // A lógica de aprendizado automático de horário foi retirada.
 
-        // 3. Salvar as alterações no usuário
+        // 3. Salvar as alterações (apenas a média)
         usuarioRepositorio.save(usuario);
     }
 
@@ -134,29 +135,34 @@ public class UsuarioServicoImpl implements UsuarioServico {
 
             // Divide com 2 casas decimais e arredondamento padrão
             novaMedia = novoTotal.divide(new BigDecimal(novoContador), 2, RoundingMode.HALF_UP);
-
+            
             usuario.setTotalTransacoesParaMedia(novoContador);
         }
 
         usuario.setMediaGasto(novaMedia);
     }
 
-    private void ajustarHorarioHabitual(Usuarios usuario, LocalTime horaTransacao) {
-        LocalTime horarioInicio = usuario.getHorarioHabitualInicio();
-        LocalTime horarioFim = usuario.getHorarioHabitualFim();
+    // O método private ajustarHorarioHabitual(Usuarios usuario, LocalTime horaTransacao)
+    // foi removido pois não é mais chamado.
 
-        if (horarioInicio == null || horarioFim == null) {
-            // Caso da primeira transação, define a janela inicial
-            usuario.setHorarioHabitualInicio(horaTransacao);
-            usuario.setHorarioHabitualFim(horaTransacao);
-        } else {
-            // Alarga a janela se necessário
-            if (horaTransacao.isBefore(horarioInicio)) {
-                usuario.setHorarioHabitualInicio(horaTransacao);
-            }
-            if (horaTransacao.isAfter(horarioFim)) {
-                usuario.setHorarioHabitualFim(horaTransacao);
-            }
-        }
+    // --- (NOVO MÉTODO) ---
+    @Override
+    @Transactional
+    public Usuarios definirHorarioHabitual(String emailUsuarioLogado, HorarioHabitualDTO horarioDTO) {
+        
+        // Busca o usuário pelo email
+        Usuarios usuario = usuarioRepositorio.findByEmailAndAtivoTrue(emailUsuarioLogado)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado: " + emailUsuarioLogado));
+
+        // Converte as strings (ex: "08:00") para objetos LocalTime
+        LocalTime inicio = LocalTime.parse(horarioDTO.getHorarioInicio());
+        LocalTime fim = LocalTime.parse(horarioDTO.getHorarioFim());
+
+        // Define os novos horários
+        usuario.setHorarioHabitualInicio(inicio);
+        usuario.setHorarioHabitualFim(fim);
+
+        // Salva e retorna o usuário atualizado
+        return usuarioRepositorio.save(usuario);
     }
 }

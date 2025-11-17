@@ -1,13 +1,18 @@
 package com.projetoA3.detector.controller;
 
+import com.projetoA3.detector.dto.HorarioHabitualDTO;
 import com.projetoA3.detector.dto.UsuarioDTO;
 import com.projetoA3.detector.entity.HistoricoUsuario;
+import com.projetoA3.detector.dto.HorarioHabitualDTO;
 import com.projetoA3.detector.entity.UsuarioOmitido;
 import com.projetoA3.detector.entity.Usuarios;
 import com.projetoA3.detector.service.UsuarioServico;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -65,6 +70,16 @@ public class UsuarioController {
     @GetMapping("/omitidos")
     public ResponseEntity<List<UsuarioOmitido>> getOmitidos() {
         return ResponseEntity.ok(usuarioServico.listarOmitidos());
+    }
+
+    @PutMapping("/meu-horario")
+    public ResponseEntity<Usuarios> setHorarioHabitual(@RequestBody HorarioHabitualDTO horarioDTO) {
+        // Pega o email do usuário logado (via token)
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String emailUsuario = authentication.getName();
+
+        Usuarios usuarioAtualizado = usuarioServico.definirHorarioHabitual(emailUsuario, horarioDTO);
+        return ResponseEntity.ok(usuarioAtualizado);
     }
 }
 
