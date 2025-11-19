@@ -3,6 +3,7 @@ package com.projetoA3.detector.service;
 import com.projetoA3.detector.dto.UsuarioSimulacaoDTO;
 import com.projetoA3.detector.entity.Cartao;
 import com.projetoA3.detector.dto.CartaoDTO;
+import com.projetoA3.detector.dto.UsuarioSimulacaoDTO;
 import com.projetoA3.detector.dto.HorarioHabitualDTO; 
 import com.projetoA3.detector.dto.UsuarioDTO;
 import com.projetoA3.detector.entity.HistoricoUsuario;

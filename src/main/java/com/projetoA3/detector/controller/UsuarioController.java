@@ -3,11 +3,13 @@ package com.projetoA3.detector.controller;
 import com.projetoA3.detector.dto.HorarioHabitualDTO;
 import com.projetoA3.detector.dto.UsuarioDTO;
 import com.projetoA3.detector.entity.HistoricoUsuario;
+import com.projetoA3.detector.dto.UsuarioSimulacaoDTO;
 import com.projetoA3.detector.dto.HorarioHabitualDTO;
 import com.projetoA3.detector.entity.UsuarioOmitido;
 import com.projetoA3.detector.entity.Usuarios;
 import com.projetoA3.detector.service.UsuarioServico;
 import com.projetoA3.detector.service.UsuarioServicoImpl;
+
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
