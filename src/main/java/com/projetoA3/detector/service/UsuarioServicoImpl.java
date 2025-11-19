@@ -1,11 +1,14 @@
 package com.projetoA3.detector.service;
 
-import com.projetoA3.detector.dto.HorarioHabitualDTO; // <-- IMPORTADO
+import com.projetoA3.detector.dto.UsuarioSimulacaoDTO;
+import com.projetoA3.detector.entity.Cartao;
+import com.projetoA3.detector.dto.CartaoDTO;
+import com.projetoA3.detector.dto.HorarioHabitualDTO; 
 import com.projetoA3.detector.dto.UsuarioDTO;
 import com.projetoA3.detector.entity.HistoricoUsuario;
 import com.projetoA3.detector.entity.UsuarioOmitido;
 import com.projetoA3.detector.entity.Usuarios;
-import com.projetoA3.detector.entity.Transacao; // <-- IMPORTADO
+import com.projetoA3.detector.entity.Transacao; 
 import com.projetoA3.detector.repository.HistoricoUsuarioRepositorio;
 import com.projetoA3.detector.repository.UsuarioOmitidoRepositorio;
 import com.projetoA3.detector.repository.UsuarioRepositorio;
@@ -14,11 +17,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal; // <-- IMPORTADO
-import java.math.RoundingMode; // <-- IMPORTADO
-import java.time.LocalTime; // <-- IMPORTADO
+import java.math.BigDecimal; 
+import java.math.RoundingMode; 
+import java.time.LocalTime; 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class UsuarioServicoImpl implements UsuarioServico {
@@ -164,5 +168,22 @@ public class UsuarioServicoImpl implements UsuarioServico {
 
         // Salva e retorna o usuário atualizado
         return usuarioRepositorio.save(usuario);
+    }
+    public List<UsuarioSimulacaoDTO> listarParaSimulacao() {
+        List<Usuarios> usuarios = usuarioRepositorio.findByAtivoTrue();
+        
+        return usuarios.stream().map(u -> {
+            List<CartaoDTO> cartoesDto = u.getCartoes().stream().map(c -> {
+                CartaoDTO dto = new CartaoDTO();
+                dto.setId(c.getId());
+                dto.setNumero(c.getNumero());
+                dto.setValidade(c.getValidade());
+                dto.setNomeTitular(c.getNomeTitular());
+                dto.setBandeira(c.getBandeira());
+                return dto;
+            }).collect(Collectors.toList());
+
+            return new UsuarioSimulacaoDTO(u.getId(), u.getNome(), u.getEmail(), cartoesDto);
+        }).collect(Collectors.toList());
     }
 }

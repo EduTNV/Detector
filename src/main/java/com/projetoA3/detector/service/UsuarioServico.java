@@ -1,6 +1,7 @@
 package com.projetoA3.detector.service;
 
 import com.projetoA3.detector.dto.UsuarioDTO;
+import com.projetoA3.detector.dto.UsuarioSimulacaoDTO;
 import com.projetoA3.detector.dto.HorarioHabitualDTO;
 import com.projetoA3.detector.entity.HistoricoUsuario;
 import com.projetoA3.detector.entity.UsuarioOmitido;
@@ -28,6 +29,8 @@ public interface UsuarioServico {
     boolean omitirUsuario(Long id);
     
     List<UsuarioOmitido> listarOmitidos();
+
+    List<UsuarioSimulacaoDTO> listarParaSimulacao();
 
     void atualizarPadroesUsuario(Usuarios usuario, Transacao novaTransacao);
 
