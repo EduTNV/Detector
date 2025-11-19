@@ -9,8 +9,7 @@ import com.projetoA3.detector.entity.TransacaoStatus;
 import com.projetoA3.detector.entity.Usuarios;
 import com.projetoA3.detector.repository.CartaoRepositorio;
 import com.projetoA3.detector.repository.TransacaoRepositorio;
-import com.projetoA3.detector.exception.FraudDetectedException; // <-- IMPORTAR (SE NÃO ESTIVER)
-
+import com.projetoA3.detector.exception.FraudDetectedException;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
@@ -23,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalTime;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -164,5 +164,18 @@ public class TransacaoServicoImpl implements TransacaoServico {
 
         // **CORREÇÃO DE VAZAMENTO DE DADOS**
         return new TransacaoViewDTO(transacaoSalva); // Retorna o DTO seguro
+    }
+
+    @Override
+    public List<TransacaoViewDTO> buscarPendentesDoUsuario(String emailUsuario) {
+        // Busca todas as transações com status PENDING deste usuário
+        List<Transacao> pendentes = transacaoRepositorio.findByCartaoUsuarioEmailAndStatus(
+            emailUsuario, 
+            TransacaoStatus.PENDING
+        );
+
+        return pendentes.stream()
+                .map(TransacaoViewDTO::new)
+                .collect(java.util.stream.Collectors.toList());
     }
 }
