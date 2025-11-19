@@ -1,10 +1,10 @@
 package com.projetoA3.detector.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore; // <-- IMPORTE ESTA LINHA
+import com.fasterxml.jackson.annotation.JsonIgnore; 
 import jakarta.persistence.*;
+import java.math.BigDecimal; // Import necessário
+import java.time.LocalTime;  // Import necessário
 import java.util.List;
-import java.math.BigDecimal; // <-- IMPORTAR
-import java.time.LocalTime; // <-- IMPORTAR
 
 @Entity
 @Table(name = "usuarios")
@@ -23,107 +23,62 @@ public class Usuarios {
     @Column(nullable = false)
     private String senha;
 
-    @Column
-    private BigDecimal mediaGasto; // Média de valor por transação
-
-    @Column
-    private int totalTransacoesParaMedia; // Contador para ajudar no cálculo da média
-
-    @Column
-    private LocalTime horarioHabitualInicio; // Ex: 08:00
-
-    @Column
-    private LocalTime horarioHabitualFim; // Ex: 22:00
-
-    // A anotação @JsonManagedReference foi trocada por @JsonIgnore
-    // para quebrar o loop de serialização de forma mais simples
-    @JsonIgnore // <-- ADICIONE ESTA LINHA
+    @JsonIgnore 
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Cartao> cartoes;
 
-    // Campo para o soft delete
     @Column(nullable = false)
     private boolean ativo = true;
 
-    // Getters e Setters (Todos incluídos)
+    // --- CAMPOS DE PADRÃO (CORRIGIDOS) ---
+    @Column
+    private BigDecimal mediaGasto; 
 
-    public Long getId() {
-        return id;
+    @Column
+    // MUDANÇA AQUI: De 'int' para 'Integer' e inicializando com 0
+    private Integer totalTransacoesParaMedia = 0; 
+
+    @Column
+    private LocalTime horarioHabitualInicio; 
+
+    @Column
+    private LocalTime horarioHabitualFim; 
+
+    // --- GETTERS E SETTERS ---
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public String getNome() { return nome; }
+    public void setNome(String nome) { this.nome = nome; }
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+
+    public String getSenha() { return senha; }
+    public void setSenha(String senha) { this.senha = senha; }
+
+    public List<Cartao> getCartoes() { return cartoes; }
+    public void setCartoes(List<Cartao> cartoes) { this.cartoes = cartoes; }
+
+    public boolean isAtivo() { return ativo; }
+    public void setAtivo(boolean ativo) { this.ativo = ativo; }
+
+    // Novos Getters e Setters
+    public BigDecimal getMediaGasto() { return mediaGasto; }
+    public void setMediaGasto(BigDecimal mediaGasto) { this.mediaGasto = mediaGasto; }
+
+    // MUDANÇA AQUI: Getter e Setter agora usam Integer
+    public Integer getTotalTransacoesParaMedia() { 
+        return totalTransacoesParaMedia == null ? 0 : totalTransacoesParaMedia; 
+    }
+    public void setTotalTransacoesParaMedia(Integer totalTransacoesParaMedia) { 
+        this.totalTransacoesParaMedia = totalTransacoesParaMedia; 
     }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public LocalTime getHorarioHabitualInicio() { return horarioHabitualInicio; }
+    public void setHorarioHabitualInicio(LocalTime horarioHabitualInicio) { this.horarioHabitualInicio = horarioHabitualInicio; }
 
-    public void setNome(String nome) {
-        this.nome = nome;
-    }
-
-    public String getNome() {
-        return nome;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setSenha(String senha) {
-        this.senha = senha;
-    }
-
-    public String getSenha() {
-        return senha;
-    }
-
-    public List<Cartao> getCartoes() {
-        return cartoes;
-    }
-
-    public void setCartoes(List<Cartao> cartoes) {
-        this.cartoes = cartoes;
-    }
-
-    public boolean isAtivo() {
-        return ativo;
-    }
-
-    public void setAtivo(boolean ativo) {
-        this.ativo = ativo;
-    }
-
-    public BigDecimal getMediaGasto() {
-        return mediaGasto;
-    }
-
-    public void setMediaGasto(BigDecimal mediaGasto) {
-        this.mediaGasto = mediaGasto;
-    }
-
-    public int getTotalTransacoesParaMedia() {
-        return totalTransacoesParaMedia;
-    }
-
-    public void setTotalTransacoesParaMedia(int totalTransacoesParaMedia) {
-        this.totalTransacoesParaMedia = totalTransacoesParaMedia;
-    }
-
-    public LocalTime getHorarioHabitualInicio() {
-        return horarioHabitualInicio;
-    }
-
-    public void setHorarioHabitualInicio(LocalTime horarioHabitualInicio) {
-        this.horarioHabitualInicio = horarioHabitualInicio;
-    }
-
-    public LocalTime getHorarioHabitualFim() {
-        return horarioHabitualFim;
-    }
-
-    public void setHorarioHabitualFim(LocalTime horarioHabitualFim) {
-        this.horarioHabitualFim = horarioHabitualFim;
-    }
+    public LocalTime getHorarioHabitualFim() { return horarioHabitualFim; }
+    public void setHorarioHabitualFim(LocalTime horarioHabitualFim) { this.horarioHabitualFim = horarioHabitualFim; }
 }

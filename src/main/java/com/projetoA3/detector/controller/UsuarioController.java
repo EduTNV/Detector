@@ -89,8 +89,8 @@ public class UsuarioController {
     
     @GetMapping("/admin/simulacao-dados")
     public ResponseEntity<List<UsuarioSimulacaoDTO>> getDadosSimulacao() {
-        // Em um sistema real, você verificaria se o usuário logado é ADMIN aqui.
         return ResponseEntity.ok(((UsuarioServicoImpl) usuarioServico).listarParaSimulacao());
     }
+
 }
 
