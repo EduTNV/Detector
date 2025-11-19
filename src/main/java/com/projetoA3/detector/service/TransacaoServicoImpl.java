@@ -2,7 +2,7 @@ package com.projetoA3.detector.service;
 
 import com.projetoA3.detector.dto.TransacaoDTO;
 import com.projetoA3.detector.dto.TransacaoResponseDTO;
-import com.projetoA3.detector.dto.TransacaoViewDTO; // <-- IMPORTAR
+import com.projetoA3.detector.dto.TransacaoViewDTO; // Importe o DTO de visualização
 import com.projetoA3.detector.entity.Cartao;
 import com.projetoA3.detector.entity.Transacao;
 import com.projetoA3.detector.entity.TransacaoStatus;
@@ -10,12 +10,13 @@ import com.projetoA3.detector.entity.Usuarios;
 import com.projetoA3.detector.repository.CartaoRepositorio;
 import com.projetoA3.detector.repository.TransacaoRepositorio;
 import com.projetoA3.detector.exception.FraudDetectedException;
+
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.PrecisionModel;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.AccessDeniedException; // <-- IMPORTAR
+import org.springframework.security.access.AccessDeniedException; // Importe a exceção de segurança
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,18 +24,18 @@ import java.math.BigDecimal;
 import java.time.LocalTime;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class TransacaoServicoImpl implements TransacaoServico {
 
-    // ... (injeções e constantes existentes) ...
     private final TransacaoRepositorio transacaoRepositorio;
     private final CartaoRepositorio cartaoRepositorio;
-    private final UsuarioServico usuarioServico; 
+    private final UsuarioServico usuarioServico;
     
     private final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
     
+    // Limites de Fraude
     private static final double FATOR_DESVIO_GASTO = 3.0; 
     private static final double DISTANCIA_MAXIMA_KM_PERMITIDA = 25.0; 
 
@@ -55,36 +56,57 @@ public class TransacaoServicoImpl implements TransacaoServico {
                 .orElseThrow(() -> new RuntimeException("Cartão não encontrado com o ID: " + transacaoDto.getCartaoId()));
         Usuarios usuario = cartao.getUsuario();
 
-        // --- LÓGICA DE DETECÇÃO (NÃO MAIS LANÇA EXCEÇÃO) ---
-        String mensagemFraude = null; 
+        // --- LÓGICA DE LOCALIZAÇÃO (SIMULAÇÃO VS REAL) ---
+        double latUsuario, lonUsuario;
 
-        // REGRA TIPO 1: Gasto Atípico
+        // Se as coordenadas vierem zeradas (0.0), é uma simulação do DEV.
+        // Nesse caso, usamos a última localização conhecida do usuário (salva no banco).
+        if (transacaoDto.getLatitudeUsuario() == 0.0 && transacaoDto.getLongitudeUsuario() == 0.0) {
+            if (usuario.getLatitudeAtual() == null || usuario.getLongitudeAtual() == null) {
+                throw new FraudDetectedException("ERRO: Localização do usuário desconhecida. O usuário precisa logar no Dashboard.");
+            }
+            latUsuario = usuario.getLatitudeAtual();
+            lonUsuario = usuario.getLongitudeAtual();
+            
+            // Atualiza o DTO para o cálculo correto
+            transacaoDto.setLatitudeUsuario(latUsuario);
+            transacaoDto.setLongitudeUsuario(lonUsuario);
+        } else {
+            // Fluxo normal: usa o que veio do frontend
+            latUsuario = transacaoDto.getLatitudeUsuario();
+            lonUsuario = transacaoDto.getLongitudeUsuario();
+        }
+
+        // --- DETECÇÃO DE FRAUDE ---
+        String mensagemFraude = null;
+
+        // 1. Gasto Atípico
         if (usuario.getMediaGasto() != null && usuario.getMediaGasto().compareTo(BigDecimal.ZERO) > 0) {
             BigDecimal mediaHabitual = usuario.getMediaGasto();
             BigDecimal limiteGasto = mediaHabitual.multiply(new BigDecimal(FATOR_DESVIO_GASTO));
             
             if (transacaoDto.getValor().compareTo(limiteGasto) > 0) {
-                mensagemFraude = String.format("ALERTA: Valor (R$ %.2f) muito acima da sua média (R$ %.2f).",
+                mensagemFraude = String.format("ALERTA: Valor (R$ %.2f) muito acima da média (R$ %.2f).",
                                   transacaoDto.getValor(), mediaHabitual);
             }
         }
 
-        // REGRA TIPO 2: Horário Atípico
+        // 2. Horário Atípico (apenas se não falhou na regra 1)
         if (mensagemFraude == null && usuario.getHorarioHabitualInicio() != null && usuario.getHorarioHabitualFim() != null) {
-            LocalTime horaTransacao = LocalTime.now(); // Usa o fuso do servidor (corrigido no DetentorApplication)
+            LocalTime horaTransacao = LocalTime.now();
             if (horaTransacao.isBefore(usuario.getHorarioHabitualInicio()) || 
                 horaTransacao.isAfter(usuario.getHorarioHabitualFim())) {
                 
-                mensagemFraude = String.format("ALERTA: Compra às %s, fora do seu horário habitual (%s - %s).",
+                mensagemFraude = String.format("ALERTA: Compra às %s, fora do horário habitual (%s - %s).",
                                   horaTransacao, usuario.getHorarioHabitualInicio(), usuario.getHorarioHabitualFim());
             }
         }
 
-        // REGRA TIPO 3: Localização
+        // 3. Localização (apenas se não falhou nas anteriores)
         if (mensagemFraude == null) {
             Double distanciaKm = transacaoRepositorio.calcularDistanciaEntrePontosKm(
                 transacaoDto.getLongitude(), transacaoDto.getLatitude(),
-                transacaoDto.getLongitudeUsuario(), transacaoDto.getLatitudeUsuario()
+                lonUsuario, latUsuario
             );
 
             if (distanciaKm != null && distanciaKm > DISTANCIA_MAXIMA_KM_PERMITIDA) {
@@ -92,6 +114,7 @@ public class TransacaoServicoImpl implements TransacaoServico {
             }
         }
         
+        // --- CRIAÇÃO DA TRANSAÇÃO ---
         Point localizacaoPonto = geometryFactory.createPoint(
             new Coordinate(transacaoDto.getLongitude(), transacaoDto.getLatitude())
         );
@@ -100,10 +123,11 @@ public class TransacaoServicoImpl implements TransacaoServico {
         novaTransacao.setValor(transacaoDto.getValor());
         novaTransacao.setEstabelecimento(transacaoDto.getEstabelecimento());
         novaTransacao.setCartao(cartao);
-        novaTransacao.setDataHora(LocalDateTime.now()); // Usa o fuso do servidor
+        novaTransacao.setDataHora(LocalDateTime.now());
         novaTransacao.setLocalizacao(localizacaoPonto);
         novaTransacao.setIpAddress(transacaoDto.getIpAddress());
         
+        // Define o status com base na fraude
         if (mensagemFraude != null) {
             novaTransacao.setStatus(TransacaoStatus.PENDING);
             Transacao transacaoSalva = transacaoRepositorio.save(novaTransacao);
@@ -111,64 +135,63 @@ public class TransacaoServicoImpl implements TransacaoServico {
         } else {
             novaTransacao.setStatus(TransacaoStatus.COMPLETED);
             Transacao transacaoSalva = transacaoRepositorio.save(novaTransacao);
+            // Atualiza a média de gastos se aprovada
             usuarioServico.atualizarPadroesUsuario(usuario, transacaoSalva);
             return new TransacaoResponseDTO("COMPLETED", "Transação registrada com sucesso.", transacaoSalva);
         }
     }
 
-    // --- (MÉTODO ATUALIZADO COM SEGURANÇA IDOR E RETORNO DTO) ---
+    // --- MÉTODO CORRIGIDO (Recebe email e retorna ViewDTO) ---
     @Override
     @Transactional
     public TransacaoViewDTO confirmarTransacao(Long transacaoId, String emailUsuarioLogado) {
         Transacao transacao = transacaoRepositorio.findById(transacaoId)
                 .orElseThrow(() -> new RuntimeException("Transação não encontrada."));
 
-        // **CORREÇÃO DE SEGURANÇA (IDOR)**
-        // Verifica se o usuário logado é o dono da transação
+        // SEGURANÇA: Verifica se o usuário é o dono
         if (!transacao.getCartao().getUsuario().getEmail().equals(emailUsuarioLogado)) {
             throw new AccessDeniedException("Acesso negado: Você não é o proprietário desta transação.");
         }
 
         if (transacao.getStatus() != TransacaoStatus.PENDING) {
-            throw new IllegalStateException("Esta transação não está pendente de confirmação.");
+            throw new IllegalStateException("Esta transação não está pendente.");
         }
 
         transacao.setStatus(TransacaoStatus.COMPLETED);
         Usuarios usuario = transacao.getCartao().getUsuario();
+        
+        // Atualiza o padrão (treina a IA) pois o usuário confirmou que é legítima
         usuarioServico.atualizarPadroesUsuario(usuario, transacao);
         
-        Transacao transacaoSalva = transacaoRepositorio.save(transacao);
-        
-        // **CORREÇÃO DE VAZAMENTO DE DADOS**
-        return new TransacaoViewDTO(transacaoSalva); // Retorna o DTO seguro
+        Transacao salva = transacaoRepositorio.save(transacao);
+        return new TransacaoViewDTO(salva);
     }
 
-    // --- (MÉTODO ATUALIZADO COM SEGURANÇA IDOR E RETORNO DTO) ---
+    // --- MÉTODO CORRIGIDO (Recebe email e retorna ViewDTO) ---
     @Override
     @Transactional
     public TransacaoViewDTO negarTransacao(Long transacaoId, String emailUsuarioLogado) {
         Transacao transacao = transacaoRepositorio.findById(transacaoId)
                 .orElseThrow(() -> new RuntimeException("Transação não encontrada."));
 
-        // **CORREÇÃO DE SEGURANÇA (IDOR)**
+        // SEGURANÇA: Verifica se o usuário é o dono
         if (!transacao.getCartao().getUsuario().getEmail().equals(emailUsuarioLogado)) {
             throw new AccessDeniedException("Acesso negado: Você não é o proprietário desta transação.");
         }
 
         if (transacao.getStatus() != TransacaoStatus.PENDING) {
-            throw new IllegalStateException("Esta transação não está pendente de confirmação.");
+            throw new IllegalStateException("Esta transação não está pendente.");
         }
 
         transacao.setStatus(TransacaoStatus.DENIED);
-        Transacao transacaoSalva = transacaoRepositorio.save(transacao);
-
-        // **CORREÇÃO DE VAZAMENTO DE DADOS**
-        return new TransacaoViewDTO(transacaoSalva); // Retorna o DTO seguro
+        Transacao salva = transacaoRepositorio.save(transacao);
+        
+        return new TransacaoViewDTO(salva);
     }
 
+    // --- NOVO MÉTODO PARA POLLING DO FRONTEND ---
     @Override
     public List<TransacaoViewDTO> buscarPendentesDoUsuario(String emailUsuario) {
-        // Busca todas as transações com status PENDING deste usuário
         List<Transacao> pendentes = transacaoRepositorio.findByCartaoUsuarioEmailAndStatus(
             emailUsuario, 
             TransacaoStatus.PENDING
@@ -176,6 +199,6 @@ public class TransacaoServicoImpl implements TransacaoServico {
 
         return pendentes.stream()
                 .map(TransacaoViewDTO::new)
-                .collect(java.util.stream.Collectors.toList());
+                .collect(Collectors.toList());
     }
 }

@@ -2,25 +2,26 @@ package com.projetoA3.detector.controller;
 
 import com.projetoA3.detector.dto.HorarioHabitualDTO;
 import com.projetoA3.detector.dto.UsuarioDTO;
-import com.projetoA3.detector.entity.HistoricoUsuario;
 import com.projetoA3.detector.dto.UsuarioSimulacaoDTO;
-import com.projetoA3.detector.dto.HorarioHabitualDTO;
+import com.projetoA3.detector.entity.HistoricoUsuario;
 import com.projetoA3.detector.entity.UsuarioOmitido;
 import com.projetoA3.detector.entity.Usuarios;
 import com.projetoA3.detector.service.UsuarioServico;
 import com.projetoA3.detector.service.UsuarioServicoImpl;
-
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-import com.projetoA3.detector.dto.UsuarioSimulacaoDTO;
 
 import java.util.List;
+
+// Classe auxiliar para receber a localização
+class LocalizacaoRequest {
+    public double latitude;
+    public double longitude;
+}
 
 @RestController
 @RequestMapping("/api/usuarios")
@@ -33,7 +34,6 @@ public class UsuarioController {
         this.usuarioServico = usuarioServico;
     }
 
-    // MÉTODO POST PARA CRIAR USUÁRIO (ESTAVA EM FALTA)
     @PostMapping
     public ResponseEntity<Usuarios> criarUsuario(@RequestBody UsuarioDTO usuarioDto) {
         Usuarios novoUsuario = new Usuarios();
@@ -77,20 +77,27 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioServico.listarOmitidos());
     }
 
+    // --- ENDPOINT: DEFINIR HORÁRIO HABITUAL ---
     @PutMapping("/meu-horario")
     public ResponseEntity<Usuarios> setHorarioHabitual(@RequestBody HorarioHabitualDTO horarioDTO) {
-        // Pega o email do usuário logado (via token)
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String emailUsuario = authentication.getName();
 
         Usuarios usuarioAtualizado = usuarioServico.definirHorarioHabitual(emailUsuario, horarioDTO);
         return ResponseEntity.ok(usuarioAtualizado);
     }
-    
+
+    // --- ENDPOINT: ATUALIZAR LOCALIZAÇÃO (Para Simulação) ---
+    @PutMapping("/minha-localizacao")
+    public ResponseEntity<Void> atualizarLocalizacao(@RequestBody LocalizacaoRequest loc) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        usuarioServico.atualizarLocalizacao(auth.getName(), loc.latitude, loc.longitude);
+        return ResponseEntity.ok().build();
+    }
+
+    // --- ENDPOINT: DADOS PARA SIMULAÇÃO (ADMIN) ---
     @GetMapping("/admin/simulacao-dados")
     public ResponseEntity<List<UsuarioSimulacaoDTO>> getDadosSimulacao() {
         return ResponseEntity.ok(((UsuarioServicoImpl) usuarioServico).listarParaSimulacao());
     }
-
 }
-

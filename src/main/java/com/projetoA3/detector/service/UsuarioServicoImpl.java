@@ -143,6 +143,17 @@ public class UsuarioServicoImpl implements UsuarioServico {
         return usuarioRepositorio.save(usuario);
     }
 
+    @Override
+    @Transactional
+    public void atualizarLocalizacao(String email, double latitude, double longitude) {
+        Usuarios usuario = usuarioRepositorio.findByEmailAndAtivoTrue(email)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+        
+        usuario.setLatitudeAtual(latitude);
+        usuario.setLongitudeAtual(longitude);
+        usuarioRepositorio.save(usuario);
+    }
+
     // --- MÉTODO ADICIONADO E ANOTADO COM TRANSACTIONAL ---
     @Override
     @Transactional(readOnly = true) // Importante para carregar os cartões (Lazy Load)

@@ -23,6 +23,12 @@ public class Usuarios {
     @Column(nullable = false)
     private String senha;
 
+    @Column
+    private Double latitudeAtual;
+
+    @Column
+    private Double longitudeAtual;
+
     @JsonIgnore 
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Cartao> cartoes;
@@ -81,4 +87,10 @@ public class Usuarios {
 
     public LocalTime getHorarioHabitualFim() { return horarioHabitualFim; }
     public void setHorarioHabitualFim(LocalTime horarioHabitualFim) { this.horarioHabitualFim = horarioHabitualFim; }
+
+    public Double getLatitudeAtual() { return latitudeAtual; }
+    public void setLatitudeAtual(Double latitudeAtual) { this.latitudeAtual = latitudeAtual; }
+
+    public Double getLongitudeAtual() { return longitudeAtual; }
+    public void setLongitudeAtual(Double longitudeAtual) { this.longitudeAtual = longitudeAtual; }
 }

@@ -35,4 +35,6 @@ public interface UsuarioServico {
     void atualizarPadroesUsuario(Usuarios usuario, Transacao novaTransacao);
 
     Usuarios definirHorarioHabitual(String emailUsuarioLogado, HorarioHabitualDTO horarioDTO);
+
+    void atualizarLocalizacao(String email, double latitude, double longitude);
 }
