@@ -1,15 +1,13 @@
 package com.projetoA3.detector.service;
 
-import com.projetoA3.detector.dto.UsuarioSimulacaoDTO;
-import com.projetoA3.detector.entity.Cartao;
-import com.projetoA3.detector.dto.CartaoDTO;
-import com.projetoA3.detector.dto.UsuarioSimulacaoDTO;
-import com.projetoA3.detector.dto.HorarioHabitualDTO; 
+import com.projetoA3.detector.dto.HorarioHabitualDTO;
 import com.projetoA3.detector.dto.UsuarioDTO;
+import com.projetoA3.detector.dto.CartaoDTO; 
+import com.projetoA3.detector.dto.UsuarioSimulacaoDTO; 
 import com.projetoA3.detector.entity.HistoricoUsuario;
 import com.projetoA3.detector.entity.UsuarioOmitido;
 import com.projetoA3.detector.entity.Usuarios;
-import com.projetoA3.detector.entity.Transacao; 
+import com.projetoA3.detector.entity.Transacao;
 import com.projetoA3.detector.repository.HistoricoUsuarioRepositorio;
 import com.projetoA3.detector.repository.UsuarioOmitidoRepositorio;
 import com.projetoA3.detector.repository.UsuarioRepositorio;
@@ -18,12 +16,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal; 
-import java.math.RoundingMode; 
-import java.time.LocalTime; 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.stream.Collectors; 
 
 @Service
 public class UsuarioServicoImpl implements UsuarioServico {
@@ -108,18 +106,10 @@ public class UsuarioServicoImpl implements UsuarioServico {
         return usuarioOmitidoRepositorio.findAll();
     }
 
-    // --- (MÉTODO ATUALIZADO) ---
     @Override
     @Transactional
     public void atualizarPadroesUsuario(Usuarios usuario, Transacao novaTransacao) {
-        
-        // 1. Recalcular Média de Gasto (Mantido)
         recalcularMediaGasto(usuario, novaTransacao.getValor());
-
-        // 2. Ajustar Horário (REMOVIDO, conforme sua solicitação)
-        // A lógica de aprendizado automático de horário foi retirada.
-
-        // 3. Salvar as alterações (apenas a média)
         usuarioRepositorio.save(usuario);
     }
 
@@ -129,47 +119,33 @@ public class UsuarioServicoImpl implements UsuarioServico {
         BigDecimal novaMedia;
 
         if (mediaAntiga == null || totalTransacoes == 0) {
-            // Caso da primeira transação
             novaMedia = valorNovaTransacao;
             usuario.setTotalTransacoesParaMedia(1);
         } else {
-            // Cálculo da média ponderada com BigDecimal
             BigDecimal totalAnterior = mediaAntiga.multiply(new BigDecimal(totalTransacoes));
             BigDecimal novoTotal = totalAnterior.add(valorNovaTransacao);
             int novoContador = totalTransacoes + 1;
-
-            // Divide com 2 casas decimais e arredondamento padrão
             novaMedia = novoTotal.divide(new BigDecimal(novoContador), 2, RoundingMode.HALF_UP);
-            
             usuario.setTotalTransacoesParaMedia(novoContador);
         }
-
         usuario.setMediaGasto(novaMedia);
     }
 
-    // O método private ajustarHorarioHabitual(Usuarios usuario, LocalTime horaTransacao)
-    // foi removido pois não é mais chamado.
-
-    // --- (NOVO MÉTODO) ---
     @Override
     @Transactional
     public Usuarios definirHorarioHabitual(String emailUsuarioLogado, HorarioHabitualDTO horarioDTO) {
-        
-        // Busca o usuário pelo email
         Usuarios usuario = usuarioRepositorio.findByEmailAndAtivoTrue(emailUsuarioLogado)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado: " + emailUsuarioLogado));
-
-        // Converte as strings (ex: "08:00") para objetos LocalTime
         LocalTime inicio = LocalTime.parse(horarioDTO.getHorarioInicio());
         LocalTime fim = LocalTime.parse(horarioDTO.getHorarioFim());
-
-        // Define os novos horários
         usuario.setHorarioHabitualInicio(inicio);
         usuario.setHorarioHabitualFim(fim);
-
-        // Salva e retorna o usuário atualizado
         return usuarioRepositorio.save(usuario);
     }
+
+    // --- MÉTODO ADICIONADO E ANOTADO COM TRANSACTIONAL ---
+    @Override
+    @Transactional(readOnly = true) // Importante para carregar os cartões (Lazy Load)
     public List<UsuarioSimulacaoDTO> listarParaSimulacao() {
         List<Usuarios> usuarios = usuarioRepositorio.findByAtivoTrue();
         
