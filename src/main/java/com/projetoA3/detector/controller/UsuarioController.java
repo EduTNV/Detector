@@ -16,8 +16,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-
-// Classe auxiliar para receber a localização
+ 
 class LocalizacaoRequest {
     public double latitude;
     public double longitude;
@@ -75,9 +74,7 @@ public class UsuarioController {
     @GetMapping("/omitidos")
     public ResponseEntity<List<UsuarioOmitido>> getOmitidos() {
         return ResponseEntity.ok(usuarioServico.listarOmitidos());
-    }
-
-    // --- ENDPOINT: DEFINIR HORÁRIO HABITUAL ---
+    } 
     @PutMapping("/meu-horario")
     public ResponseEntity<Usuarios> setHorarioHabitual(@RequestBody HorarioHabitualDTO horarioDTO) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -85,17 +82,14 @@ public class UsuarioController {
 
         Usuarios usuarioAtualizado = usuarioServico.definirHorarioHabitual(emailUsuario, horarioDTO);
         return ResponseEntity.ok(usuarioAtualizado);
-    }
-
-    // --- ENDPOINT: ATUALIZAR LOCALIZAÇÃO (Para Simulação) ---
+    } 
     @PutMapping("/minha-localizacao")
     public ResponseEntity<Void> atualizarLocalizacao(@RequestBody LocalizacaoRequest loc) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         usuarioServico.atualizarLocalizacao(auth.getName(), loc.latitude, loc.longitude);
         return ResponseEntity.ok().build();
     }
-
-    // --- ENDPOINT: DADOS PARA SIMULAÇÃO (ADMIN) ---
+ 
     @GetMapping("/admin/simulacao-dados")
     public ResponseEntity<List<UsuarioSimulacaoDTO>> getDadosSimulacao() {
         return ResponseEntity.ok(((UsuarioServicoImpl) usuarioServico).listarParaSimulacao());

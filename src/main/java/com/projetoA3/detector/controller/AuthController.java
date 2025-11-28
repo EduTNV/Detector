@@ -31,7 +31,7 @@ public class AuthController {
     private CustomUserDetailsService userDetailsService;
 
     @Autowired
-    private UsuarioRepositorio usuarioRepositorio; // <-- Injeção nova para buscar dados do usuário
+    private UsuarioRepositorio usuarioRepositorio;  
 
     @PostMapping("/login")
     public ResponseEntity<?> createAuthenticationToken(@RequestBody AuthRequest authRequest) {
@@ -44,18 +44,13 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Email ou senha inválidos");
         } catch (DisabledException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Usuário desabilitado");
-        }
-
-        // Se a autenticação foi bem-sucedida...
+        } 
         final UserDetails userDetails = userDetailsService.loadUserByUsername(authRequest.getEmail());
         final String token = jwtTokenUtil.generateToken(userDetails);
-
-        // Busca os dados completos do usuário no banco para retornar (Nome e Email)
-        // O uso do orElseThrow é seguro aqui pois o loadUserByUsername já garantiu que o usuário existe
+ 
         Usuarios usuario = usuarioRepositorio.findByEmail(authRequest.getEmail())
                 .orElseThrow(() -> new RuntimeException("Erro interno: Usuário autenticado não encontrado no banco."));
-
-        // Retorna o Token junto com o Nome e Email
+ 
         return ResponseEntity.ok(new AuthResponse(token, usuario.getNome(), usuario.getEmail()));
     }
 

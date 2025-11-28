@@ -1,12 +1,11 @@
-// Local: src/main/java/com/projetoA3/detector/config/JwtRequestFilter.java
 package com.projetoA3.detector.config;
 
 import com.projetoA3.detector.service.CustomUserDetailsService;
 import com.projetoA3.detector.util.JwtTokenUtil;
 import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.MalformedJwtException; // <-- IMPORTE ESTE
-import io.jsonwebtoken.SignatureException; // <-- IMPORTE ESTE
-import io.jsonwebtoken.UnsupportedJwtException; // <-- IMPORTE ESTE
+import io.jsonwebtoken.MalformedJwtException; 
+import io.jsonwebtoken.SignatureException; 
+import io.jsonwebtoken.UnsupportedJwtException; 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -44,7 +43,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             try {
                 username = jwtTokenUtil.getUsernameFromToken(jwtToken);
             
-            // --- (INÍCIO) BLOCO DE CATCH ATUALIZADO ---
+          
             } catch (IllegalArgumentException e) {
                 System.out.println("Token JWT inválido: Não foi possível obter o token (argumento ilegal).");
             } catch (ExpiredJwtException e) {
@@ -56,14 +55,11 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             } catch (UnsupportedJwtException e) {
                 System.out.println("Token JWT não é suportado.");
             }
-            // --- (FIM) BLOCO DE CATCH ATUALIZADO ---
 
         } else if (requestTokenHeader != null) {
-            // Isso é da nossa correção anterior, está correto.
             logger.warn("Token JWT não começa com 'Bearer '.");
         }
 
-        // Depois de obter o token, validamos ele.
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);

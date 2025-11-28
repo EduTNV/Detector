@@ -1,4 +1,3 @@
-// Local: src/main/java/com/projetoA3/detector/dto/AuthRequest.java
 package com.projetoA3.detector.dto;
 
 import java.io.Serializable;
@@ -9,8 +8,7 @@ public class AuthRequest implements Serializable {
 
     private String email;
     private String senha;
-
-    // Construtor vazio necessário para o Jackson (processamento de JSON)
+ 
     public AuthRequest() {
     }
 

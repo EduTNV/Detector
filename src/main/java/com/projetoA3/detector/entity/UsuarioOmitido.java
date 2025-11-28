@@ -12,7 +12,7 @@ public class UsuarioOmitido {
     private Long id;
 
     @Column(nullable = false)
-    private Long usuarioId; // ID do usuário original
+    private Long usuarioId;  
 
     @Column(nullable = false)
     private String nome;
@@ -22,20 +22,17 @@ public class UsuarioOmitido {
 
     @Column(nullable = false)
     private LocalDateTime dataOmissao;
-
-    // Construtor vazio
+ 
     public UsuarioOmitido() {
     }
-
-    // Construtor para facilitar a criação a partir de um usuário
+ 
     public UsuarioOmitido(Usuarios usuario) {
         this.usuarioId = usuario.getId();
         this.nome = usuario.getNome();
         this.email = usuario.getEmail();
         this.dataOmissao = LocalDateTime.now();
     }
-
-    // Getters e Setters
+ 
     public Long getId() {
         return id;
     }

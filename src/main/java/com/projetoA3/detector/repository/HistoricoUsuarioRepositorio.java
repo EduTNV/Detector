@@ -6,6 +6,5 @@ import java.util.List;
 
 public interface HistoricoUsuarioRepositorio extends JpaRepository<HistoricoUsuario, Long> {
 
-    // Método para encontrar todo o histórico de um usuário específico, ordenado pela data
     List<HistoricoUsuario> findByUsuarioIdOrderByDataModificacaoDesc(Long usuarioId);
 }

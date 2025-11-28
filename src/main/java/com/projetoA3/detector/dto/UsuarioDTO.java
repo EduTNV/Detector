@@ -4,8 +4,7 @@ public class UsuarioDTO {
     private String nome;
     private String email;
     private String senha;
-
-    // Getters e Setters
+ 
     public String getNome() {
         return nome;
     }

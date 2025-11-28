@@ -39,13 +39,11 @@ public class SecurityConfig {
         return authConfig.getAuthenticationManager();
     }
 
-    // --- CONFIGURAÇÃO DE CORS ATUALIZADA ---
+    
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // (A MUDANÇA ESTÁ AQUI)
-        // Permite seu frontend local e qualquer subdomínio do ngrok
         configuration.setAllowedOrigins(Arrays.asList(
                 "http://localhost:3000",
                 "https://*.ngrok-free.app"));
@@ -55,7 +53,7 @@ public class SecurityConfig {
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration); // Aplica a todas as rotas
+        source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 
@@ -65,19 +63,14 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
 
-                // 3. Define as regras de autorização
                 .authorizeHttpRequests(auth -> auth
                         
-                        // 1. PRIMEIRA REGRA: LIBERA TODOS OS OPTIONS ANTES DE TUDO
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // <-- ESSENCIAL PARA CORS
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() 
                         
-                        // 2. REGRAS PÚBLICAS
                         .requestMatchers("/api/auth/login").permitAll()
                         .requestMatchers("/api/auth/version").permitAll()
                         .requestMatchers("/healthz").permitAll() 
-                        .requestMatchers(HttpMethod.POST, "/api/usuarios").permitAll() // Rota de cadastro
-                        
-                        // 3. REGRA RESTRITIVA (A ÚLTIMA A SER APLICADA)
+                        .requestMatchers(HttpMethod.POST, "/api/usuarios").permitAll() 
                         .anyRequest().authenticated()
                         )
 

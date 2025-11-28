@@ -11,11 +11,6 @@ import com.projetoA3.detector.entity.Transacao;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Esta é a INTERFACE. 
- * Ela deve listar TODOS os métodos que a sua classe UsuarioServicoImpl implementa.
- * Se algum método estiver em falta aqui, o projeto não compila.
- */
 public interface UsuarioServico {
 
     Usuarios criarUsuario(Usuarios usuario);

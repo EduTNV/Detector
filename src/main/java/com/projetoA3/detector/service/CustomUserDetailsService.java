@@ -1,4 +1,3 @@
-// Local: src/main/java/com/projetoA3/detector/service/CustomUserDetailsService.java
 package com.projetoA3.detector.service;
 
 import com.projetoA3.detector.entity.Usuarios;
@@ -20,8 +19,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-
-        // Altere a chamada para usar o novo método
+ 
         Usuarios usuario = usuarioRepositorio.findByEmailAndAtivoTrue(email)
                 .orElseThrow(() -> new UsernameNotFoundException(
                         "Usuário não encontrado ou inativo com o e-mail: " + email));

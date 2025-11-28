@@ -12,27 +12,24 @@ public class HistoricoUsuario {
     private Long id;
 
     @Column(nullable = false)
-    private Long usuarioId; // ID do usuário original
+    private Long usuarioId; 
 
     private String nomeAntigo;
     private String emailAntigo;
 
     @Column(nullable = false)
     private LocalDateTime dataModificacao;
-
-    // Construtor vazio (requerido pelo JPA)
+ 
     public HistoricoUsuario() {
     }
-
-    // Construtor para facilitar a criação
+ 
     public HistoricoUsuario(Usuarios usuario) {
         this.usuarioId = usuario.getId();
         this.nomeAntigo = usuario.getNome();
         this.emailAntigo = usuario.getEmail();
         this.dataModificacao = LocalDateTime.now();
     }
-
-    // Getters e Setters
+ 
     public Long getId() {
         return id;
     }

@@ -1,4 +1,3 @@
-// Local: src/main/java/com/projetoA3/detector/configuracao/JwtAuthenticationEntryPoint.java
 package com.projetoA3.detector.config;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,8 +16,7 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint, Se
 
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
-                         AuthenticationException authException) throws IOException {
-        // Envia um erro 401 (Não Autorizado) quando a autenticação falha
+                         AuthenticationException authException) throws IOException { 
         response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Não autorizado");
     }
 }

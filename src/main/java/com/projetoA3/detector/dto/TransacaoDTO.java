@@ -6,14 +6,13 @@ public class TransacaoDTO {
 
     private BigDecimal valor;
     private String estabelecimento;
-    private Long cartaoId; // ID do cartão que realizou a compra
+    private Long cartaoId;  
     private double latitude;
     private double longitude;
     private String ipAddress;
     private double latitudeUsuario;
     private double longitudeUsuario;
-
-    // Getters e Setters
+ 
     public BigDecimal getValor() {
         return valor;
     }

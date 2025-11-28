@@ -5,24 +5,17 @@ import com.projetoA3.detector.entity.TransacaoStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-
-/**
- * DTO seguro para *exibir* dados de transação no frontend.
- * (Diferente do TransacaoDTO, que é para *receber* dados).
- */
+ 
 public class TransacaoViewDTO {
 
     private Long id;
     private BigDecimal valor;
     private String estabelecimento;
     private LocalDateTime dataHora;
-    private TransacaoStatus status;
-
-    // Construtor vazio
+    private TransacaoStatus status; 
     public TransacaoViewDTO() {
     }
-
-    // Construtor para facilitar a conversão
+ 
     public TransacaoViewDTO(Transacao transacao) {
         this.id = transacao.getId();
         this.valor = transacao.getValor();
@@ -30,8 +23,7 @@ public class TransacaoViewDTO {
         this.dataHora = transacao.getDataHora();
         this.status = transacao.getStatus();
     }
-
-    // Getters e Setters
+ 
     public Long getId() {
         return id;
     }

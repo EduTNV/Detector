@@ -4,8 +4,8 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication; // <-- IMPORTAR
-import org.springframework.security.core.context.SecurityContextHolder; // <-- IMPORTAR
+import org.springframework.security.core.Authentication;  
+import org.springframework.security.core.context.SecurityContextHolder;  
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,8 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.projetoA3.detector.dto.TransacaoDTO;
 import com.projetoA3.detector.dto.TransacaoResponseDTO;
-import com.projetoA3.detector.dto.TransacaoViewDTO; // <-- IMPORTAR
-// import com.projetoA3.detector.entity.Transacao; // <-- NÃO USAR MAIS A ENTIDADE NO RETORNO
+import com.projetoA3.detector.dto.TransacaoViewDTO;  
 import com.projetoA3.detector.service.TransacaoServico;
 
 @RestController
@@ -35,27 +34,22 @@ public class TransacaoController {
         TransacaoResponseDTO resposta = transacaoServico.registrarTransacao(transacaoDto);
         return ResponseEntity.ok(resposta);
     }
-
-    // --- (ENDPOINT ATUALIZADO) ---
+ 
     @PostMapping("/{id}/confirmar")
-    public ResponseEntity<TransacaoViewDTO> confirmarTransacao(@PathVariable Long id) {
-        // Extrai o email do usuário logado (do token)
+    public ResponseEntity<TransacaoViewDTO> confirmarTransacao(@PathVariable Long id) { 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String emailUsuario = authentication.getName();
         
         TransacaoViewDTO transacao = transacaoServico.confirmarTransacao(id, emailUsuario);
-        return ResponseEntity.ok(transacao); // Retorna o DTO seguro
-    }
-
-    // --- (ENDPOINT ATUALIZADO) ---
+        return ResponseEntity.ok(transacao);  
+    } 
     @PostMapping("/{id}/negar")
-    public ResponseEntity<TransacaoViewDTO> negarTransacao(@PathVariable Long id) {
-        // Extrai o email do usuário logado (do token)
+    public ResponseEntity<TransacaoViewDTO> negarTransacao(@PathVariable Long id) { 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String emailUsuario = authentication.getName();
 
         TransacaoViewDTO transacao = transacaoServico.negarTransacao(id, emailUsuario);
-        return ResponseEntity.ok(transacao); // Retorna o DTO seguro
+        return ResponseEntity.ok(transacao);  
     }
     @GetMapping("/pendentes")
     public ResponseEntity<List<TransacaoViewDTO>> verificarPendencias() {

@@ -9,6 +9,5 @@ import java.util.List;
 @Repository
 public interface CartaoRepositorio extends JpaRepository<Cartao, Long> {
 
-    // "Busque uma lista de Cartoes pelo Id do seu atributo 'usuario'"
     List<Cartao> findByUsuarioEmail(String email);
 }

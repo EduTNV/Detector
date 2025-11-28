@@ -13,9 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable; 
 
 import com.projetoA3.detector.dto.CartaoDTO;
-import com.projetoA3.detector.dto.TransacaoViewDTO; // <-- IMPORTAR
-// import com.projetoA3.detector.entity.Cartao; // <-- NÃO USAR MAIS A ENTIDADE NO RETORNO
-// import com.projetoA3.detector.entity.Transacao; // <-- NÃO USAR MAIS A ENTIDADE NO RETORNO
+import com.projetoA3.detector.dto.TransacaoViewDTO;  
 import com.projetoA3.detector.service.CartaoServico;
 import java.util.List; 
 
@@ -29,15 +27,14 @@ public class CartaoController {
     public CartaoController(CartaoServico cartaoServico) {
         this.cartaoServico = cartaoServico;
     }
-
-    // --- (ENDPOINT ATUALIZADO - RETORNA DTO) ---
+ 
     @PostMapping
     public ResponseEntity<CartaoDTO> adicionarCartao(@RequestBody CartaoDTO cartaoDto) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String emailUsuario = authentication.getName();
 
         CartaoDTO cartaoSalvo = cartaoServico.adicionarCartao(cartaoDto, emailUsuario);
-        return new ResponseEntity<>(cartaoSalvo, HttpStatus.CREATED); // Retorna o DTO
+        return new ResponseEntity<>(cartaoSalvo, HttpStatus.CREATED);  
     }
 
     @GetMapping("/meus")
@@ -47,17 +44,14 @@ public class CartaoController {
         List<CartaoDTO> cartoes = cartaoServico.buscarCartoesPorUsuarioEmail(emailUsuario);
         return ResponseEntity.ok(cartoes);
     }
-
-    // --- (ENDPOINT ATUALIZADO - SEGURANÇA IDOR E RETORNO DTO) ---
+ 
     @GetMapping("/{cartaoId}/transacoes")
-    public ResponseEntity<List<TransacaoViewDTO>> getTransacoesDoCartao(@PathVariable Long cartaoId) {
-        // Extrai o email do usuário logado (do token)
+    public ResponseEntity<List<TransacaoViewDTO>> getTransacoesDoCartao(@PathVariable Long cartaoId) { 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String emailUsuario = authentication.getName();
-        
-        // O serviço agora verifica se o usuário é o dono do cartão
+         
         List<TransacaoViewDTO> transacoes = cartaoServico.getTransacoesPorCartaoId(cartaoId, emailUsuario);
-        return ResponseEntity.ok(transacoes); // Retorna a lista segura de DTOs
+        return ResponseEntity.ok(transacoes);  
     }
 
 }

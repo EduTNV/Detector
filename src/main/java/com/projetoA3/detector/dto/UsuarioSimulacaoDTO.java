@@ -7,8 +7,7 @@ public class UsuarioSimulacaoDTO {
     private String nome;
     private String email;
     private List<CartaoDTO> cartoes;
-
-    // Construtores, Getters e Setters
+ 
     public UsuarioSimulacaoDTO(Long id, String nome, String email, List<CartaoDTO> cartoes) {
         this.id = id;
         this.nome = nome;

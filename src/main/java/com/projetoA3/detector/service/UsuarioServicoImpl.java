@@ -154,9 +154,8 @@ public class UsuarioServicoImpl implements UsuarioServico {
         usuarioRepositorio.save(usuario);
     }
 
-    // --- MÉTODO ADICIONADO E ANOTADO COM TRANSACTIONAL ---
     @Override
-    @Transactional(readOnly = true) // Importante para carregar os cartões (Lazy Load)
+    @Transactional(readOnly = true) 
     public List<UsuarioSimulacaoDTO> listarParaSimulacao() {
         List<Usuarios> usuarios = usuarioRepositorio.findByAtivoTrue();
         

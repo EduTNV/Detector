@@ -2,8 +2,8 @@ package com.projetoA3.detector.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore; 
 import jakarta.persistence.*;
-import java.math.BigDecimal; // Import necessário
-import java.time.LocalTime;  // Import necessário
+import java.math.BigDecimal;  
+import java.time.LocalTime;   
 import java.util.List;
 
 @Entity
@@ -35,13 +35,11 @@ public class Usuarios {
 
     @Column(nullable = false)
     private boolean ativo = true;
-
-    // --- CAMPOS DE PADRÃO (CORRIGIDOS) ---
+ 
     @Column
     private BigDecimal mediaGasto; 
 
-    @Column
-    // MUDANÇA AQUI: De 'int' para 'Integer' e inicializando com 0
+    @Column 
     private Integer totalTransacoesParaMedia = 0; 
 
     @Column
@@ -49,8 +47,7 @@ public class Usuarios {
 
     @Column
     private LocalTime horarioHabitualFim; 
-
-    // --- GETTERS E SETTERS ---
+ 
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -69,12 +66,10 @@ public class Usuarios {
 
     public boolean isAtivo() { return ativo; }
     public void setAtivo(boolean ativo) { this.ativo = ativo; }
-
-    // Novos Getters e Setters
+ 
     public BigDecimal getMediaGasto() { return mediaGasto; }
     public void setMediaGasto(BigDecimal mediaGasto) { this.mediaGasto = mediaGasto; }
-
-    // MUDANÇA AQUI: Getter e Setter agora usam Integer
+ 
     public Integer getTotalTransacoesParaMedia() { 
         return totalTransacoesParaMedia == null ? 0 : totalTransacoesParaMedia; 
     }

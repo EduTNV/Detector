@@ -1,14 +1,12 @@
 package com.projetoA3.detector.entity;
 
-import com.fasterxml.jackson.annotation.JsonBackReference; // Importe esta
+import com.fasterxml.jackson.annotation.JsonBackReference;  
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
-// <-- IMPORTAR
-// <-- IMPORTAR
+ 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import org.locationtech.jts.geom.Point; // Importação do PostGIS
+import org.locationtech.jts.geom.Point;  
 
 @Entity
 @Table(name = "transacoes")
@@ -26,9 +24,8 @@ public class Transacao {
 
     @Column(nullable = false)
     private LocalDateTime dataHora;
-
-    // Apenas UMA declaração do campo 'cartao'
-    @JsonBackReference // Com a anotação
+ 
+    @JsonBackReference  
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cartao_id", nullable = false)
     private Cartao cartao;
@@ -40,12 +37,11 @@ public class Transacao {
     @Column
     private String ipAddress;
 
-    @Enumerated(EnumType.STRING) // Salva o nome do enum (PENDING, COMPLETED) no DB
+    @Enumerated(EnumType.STRING)  
     @Column(nullable = false)
     private TransacaoStatus status;
 
-    
-    // Getters e Setters
+     
     
     public Long getId() {
         return id;

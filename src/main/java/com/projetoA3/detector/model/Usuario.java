@@ -6,20 +6,17 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
-@Entity // Avisa ao JPA que esta classe é uma tabela no banco
-@Table(name = "usuarios") // Define o nome da tabela
+@Entity  
+@Table(name = "usuarios")  
 public class Usuario {
 
-    @Id // Marca o campo como chave primária
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // Configura o auto-incremento
+    @Id  
+    @GeneratedValue(strategy = GenerationType.IDENTITY)  
     private Long id;
 
     private String nome;
     private String email;
-    private String senha; // Lembre-se que salvaremos a senha criptografada
-
-    // Construtores, Getters e Setters
-    // (Você pode gerar com o botão direito -> Source Action -> Generate Getters and Setters)
+    private String senha;   
 
     public Long getId() {
         return id;
