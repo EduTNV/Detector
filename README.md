@@ -4,7 +4,7 @@ Este projeto é um sistema completo de monitoramento e validação de transaçõ
 ---
 ## 📄 Artigo e Documentação Oficial
 Para entender a fundamentação teórica, os diagramas de arquitetura e os resultados detalhados, acesse o artigo completo do projeto:
-👉 Leia o Artigo Oficial do Projeto (PDF)
+👉 Leia o Artigo Oficial do Projeto [(PDF)](https://drive.google.com/file/d/1oPJ1vXX4AZBvQEZeTTlaJeXDwNdQAaoa/view)
 ---
 
 ## 🔍 Como funciona a Detecção? (O Diferencial Técnico)
