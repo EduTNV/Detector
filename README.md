@@ -1,86 +1,56 @@
-# 🛡️ Sistema de Detecção de Fraude em Cartões de Crédito / Credit Card Fraud Detection System
+🛡️ Sistema de Detecção de Fraude em Cartões de Crédito
+Este projeto é um sistema completo de monitoramento e validação de transações financeiras em tempo real. Desenvolvido como parte de uma UC Dual, a solução foi apresentada e validada por especialistas do time de Tecnologia da Informação do Bradesco, simulando um ambiente real de segurança bancária.
 
-## 📌 PT-BR – Descrição do Projeto
+📄 Artigo e Documentação Oficial
+Para entender a fundamentação teórica, os diagramas de arquitetura e os resultados detalhados, acesse o artigo completo do projeto:
+👉 Leia o Artigo Oficial do Projeto (PDF)
 
-Este repositório contém um sistema desenvolvido em **Java com Spring Boot** para **detecção de fraudes em transações com cartão de crédito**. O sistema permite o cadastro de usuários e cartões, e registra transações, aplicando regras de negócio para detectar atividades suspeitas.
+🔍 Como funciona a Detecção? (O Diferencial Técnico)
+Diferente de sistemas simples de cadastro, este motor de busca utiliza três camadas de validação lógica para classificar uma transação como COMPLETED ou PENDING_CONFIRMATION:
 
-Optamos por uma **arquitetura monolítica**, com pacotes estruturados em português, e foco em segurança, organização e boas práticas de desenvolvimento.
+Análise de Desvio de Gasto: O sistema calcula a média de gastos do usuário. Se uma nova compra for superior a 3x (Fator de Desvio) essa média, a transação é marcada para confirmação manual.
 
----
+Inteligência Geográfica (Spatial Data): Utilizando a biblioteca JTS (GeometryFactory), o sistema calcula a distância em KM entre a localização da transação e a posição atual do usuário. Compras realizadas a mais de 25km de distância geram um alerta de fraude.
 
-### 🚀 Tecnologias Utilizadas
-- Java 21+
-- Spring Boot
-- Spring Data JPA
-- Spring Security (com BCrypt)
-- H2 Database (ou outro banco relacional)
-- Maven
-- Postman (para testes)
+Janela de Horário Habitual: O motor verifica se a transação ocorre dentro do intervalo de tempo (início/fim) definido no perfil de comportamento do usuário. Fora desse horário, o sistema bloqueia a operação preventivamente.
 
----
+🚀 Tecnologias Utilizadas
+Backend: Java 21 e Spring Boot 3+.
 
-### 🧱 Estrutura do Projeto
-- `entidade/` → Classes que representam as tabelas do banco (Usuário, Cartão, Transação)
-- `repositorio/` → Interfaces que acessam o banco via JPA
-- `servico/` → Regras de negócio (cadastro, verificação de duplicidade, etc.)
-- `controle/` → Camada REST API
-- `dto/` → Objetos de transporte de dados
-- `config/` → Segurança e criptografia com BCrypt
+Segurança: Spring Security com autenticação JWT (JSON Web Token) e criptografia BCrypt.
 
----
+Banco de Dados: PostgreSQL (com suporte a dados geográficos).
 
-### 🔐 Funcionalidades
-- Cadastro de usuários com criptografia de senha
-- Prevenção de e-mails duplicados
-- Cadastro de cartões e transações
-- Exposição de endpoint via API REST
-- Estrutura extensível para validações futuras de fraude
+Frontend: React.js para o Dashboard do Usuário e Simulador de Compras.
 
-------------------------------------------------------------------------------------------------------------------------
+Geolocalização: JTS (Java Topology Suite) para cálculos espaciais precisos.
 
-# EN - USA
-This repository contains a Spring Boot-based system built in Java for detecting fraud in credit card transactions. It includes user registration, card and transaction management, and business rules to flag suspicious activities.
+🧱 Estrutura do Backend
+A arquitetura foi desenhada para ser modular e escalável:
 
-We opted for a monolithic architecture, structured the codebase in Portuguese, and focused on clean design, security, and maintainability.
+controller/: Endpoints REST para usuários, cartões e transações.
 
-🚀 Technologies Used
+service/: Onde reside a inteligência do "Motor de Fraude".
 
-Java 21
+dto/: Objetos de transferência de dados para garantir a segurança das entidades.
 
-Spring Boot
+exception/: Tratamento customizado de erros, como a FraudDetectedException.
 
-Spring Data JPA
+🔐 Funcionalidades Principais
+Fluxo de Aprovação em Duas Etapas: Transações suspeitas não são negadas de imediato; elas ficam pendentes no Dashboard para que o usuário possa Confirmar ou Negar via interface.
 
-Spring Security (with BCrypt encryption)
+Aprendizado de Padrão: A cada transação legítima concluída, o sistema atualiza a média de gasto e os padrões de comportamento do usuário.
 
-H2 Database (or any SQL-based DB)
+Dashboard em Tempo Real: Visualização de histórico e status das transações.
 
-Maven
+👨‍💻 Autores
+Projeto desenvolvido em colaboração por:
 
-Postman (for API testing)
+Eduardo Travassos (EduTNV)
 
-🧱 Project Structure
+Alexandre do Valle
 
-entidade/ → Entity classes (User, Card, Transaction)
+Vinicius Airam
 
-repositorio/ → JPA repositories
-
-servico/ → Business logic layer
-
-controle/ → REST controller (API)
-
-dto/ → Data transfer objects
-
-config/ → Security configurations (BCrypt)
-
-🔐 Features
-
-User registration with password encryption
-
-Email duplication prevention
-
-Card and transaction registration
-
-REST API for external integration
-
-Modular structure for future fraud validation logic
+🇺🇸 Project Overview (English)
+This is a full-stack Fraud Detection System validated by IT professionals from Bradesco. It uses a Java/Spring Boot engine to analyze credit card transactions in real-time based on three criteria: Spending Deviation (3x limit), Geographical Distance (25km limit using Spatial Data), and Habitual Time Windows. Suspicious activities trigger a PENDING state, requiring manual user confirmation through a React.js dashboard.
